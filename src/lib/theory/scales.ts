@@ -1,12 +1,6 @@
-// Music-theory + fretboard model. Pure, no React.
+// Scale and mode library. Pure, no React.
 
-export const SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-export const FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
-
-export function noteName(semitone: number, useFlats: boolean): string {
-  const n = ((semitone % 12) + 12) % 12
-  return (useFlats ? FLAT : SHARP)[n]
-}
+import { noteName } from './notes'
 
 export interface Scale {
   id: string
@@ -74,110 +68,8 @@ export const SCALES: Scale[] = [
   { id: 'bebop-dominant', name: 'Bebop Dominant', category: 'Exotic', intervals: [0, 2, 4, 5, 6, 7, 9, 10] },
 ]
 
-export interface Tuning {
-  id: string
-  name: string
-  strings: number[] // lowest string first, as semitone numbers
-}
-
-export const TUNINGS: Tuning[] = [
-  { id: 'standard', name: 'Standard \u2014 E A D G B E', strings: [4, 9, 2, 7, 11, 4] },
-  { id: 'dropped-d', name: 'Dropped D \u2014 D A D G B E', strings: [2, 9, 2, 7, 11, 4] },
-  { id: 'dropped-ds', name: 'Dropped D# \u2014 D# A D G B E', strings: [3, 9, 2, 7, 11, 4] },
-  { id: 'drop-c', name: 'Drop C \u2014 C G C F A D', strings: [0, 7, 0, 5, 9, 2] },
-  { id: 'drop-cs', name: 'Drop C# \u2014 C# G# C# F# A# D#', strings: [1, 8, 1, 5, 10, 3] },
-  { id: 'open-d', name: 'Open D \u2014 D A D F# A D', strings: [2, 9, 2, 6, 9, 2] },
-  { id: 'open-g', name: 'Open G \u2014 D G D G B D', strings: [2, 7, 2, 7, 11, 2] },
-  { id: 'open-a', name: 'Open A \u2014 E A E C# E A', strings: [4, 9, 4, 1, 4, 9] },
-  { id: 'open-e', name: 'Open E \u2014 E B E G# B E', strings: [4, 11, 4, 1, 11, 4] },
-  { id: 'open-c', name: 'Open C \u2014 C G C E G C', strings: [0, 7, 0, 4, 7, 0] },
-  { id: 'dadgad', name: 'DADGAD \u2014 D A D G A D', strings: [2, 9, 2, 7, 9, 2] },
-  { id: '7std', name: '7-String \u2014 A E A D G B E', strings: [9, 4, 9, 2, 7, 11, 4] },
-  { id: '7dropped', name: '7-String Dropped \u2014 D A D G B E A', strings: [2, 9, 2, 7, 11, 4, 9] },
-  { id: '8std', name: '8-String \u2014 E A D G C E A', strings: [4, 9, 2, 7, 0, 4, 9, 4] },
-]
-
-export type Handed = 'right' | 'left'
-
-export interface Settings {
-  root: number
-  scaleId: string
-  tuningId: string
-  handed: Handed
-  frets: number
-  startFret: number
-  useFlats: boolean
-  muteNonScale: boolean
-  sound: boolean
-}
-
-export const DEFAULT_SETTINGS: Settings = {
-  root: 0,
-  scaleId: 'major',
-  tuningId: 'standard',
-  handed: 'right',
-  frets: 12,
-  startFret: 0,
-  useFlats: false,
-  muteNonScale: false,
-  sound: false,
-}
-
-const TOTAL_FRETS = 24
-
 export function getScale(id: string): Scale {
   return SCALES.find((s) => s.id === id) ?? SCALES[0]
-}
-
-export function getTuning(id: string): Tuning {
-  return TUNINGS.find((t) => t.id === id) ?? TUNINGS[0]
-}
-
-export function maxStartFret(frets: number): number {
-  return Math.max(0, TOTAL_FRETS - frets)
-}
-
-export interface FretNote {
-  string: number // 0 = lowest string
-  fret: number // absolute fret number, 0 = open
-  semitone: number // 0-11
-  name: string
-  isRoot: boolean
-  inScale: boolean
-}
-
-export interface FretboardModel {
-  columns: number[] // absolute fret numbers, left -> right
-  rows: number // number of strings
-  notes: FretNote[]
-}
-
-export function buildFretboard(
-  settings: Settings,
-  scale: Scale,
-  tuning: Tuning,
-): FretboardModel {
-  const root = ((settings.root % 12) + 12) % 12
-  const intervalSet = new Set(scale.intervals.map((i) => ((i % 12) + 12) % 12))
-  const columns: number[] = []
-  for (let f = settings.startFret; f < settings.startFret + settings.frets; f++) {
-    columns.push(f)
-  }
-  const notes: FretNote[] = []
-  tuning.strings.forEach((open, stringIdx) => {
-    for (const fret of columns) {
-      const semitone = (((open + fret) % 12) + 12) % 12
-      notes.push({
-        string: stringIdx,
-        fret,
-        semitone,
-        name: noteName(semitone, settings.useFlats),
-        isRoot: semitone === root,
-        inScale: intervalSet.has(semitone),
-      })
-    }
-  })
-  return { columns, rows: tuning.strings.length, notes }
 }
 
 // The distinct note names of the scale, spelled from the root (ascending).

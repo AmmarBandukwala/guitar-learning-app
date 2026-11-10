@@ -1,0 +1,23 @@
+/* Fretboard SVG diagram. */
+
+.fretboard {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fb-note text {
+  font-weight: 700;
+  font-family: var(--sans);
+  pointer-events: none;
+  user-select: none;
+}
+
+.fb-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fb-num {
+  font-size: 12px;
+}

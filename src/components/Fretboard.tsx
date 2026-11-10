@@ -1,5 +1,5 @@
-import type { FretboardModel, Handed } from './theory'
-import { noteName } from './theory'
+import { noteName, type FretboardModel, type Handed } from '../lib/theory'
+import './Fretboard.css'
 
 interface Props {
   model: FretboardModel
@@ -22,6 +22,9 @@ const COLORS = {
   inlay: 'rgba(226,232,240,0.12)',
   label: '#94a3b8',
 }
+
+const SINGLE_INLAYS = new Set([3, 5, 7, 9, 15, 17, 19, 21])
+const DOUBLE_INLAYS = new Set([12, 24])
 
 export default function Fretboard({
   model,
@@ -56,13 +59,13 @@ export default function Fretboard({
   const rowOf = (stringIdx: number) => (isLeft ? stringIdx : rows - 1 - stringIdx)
   const dotY = (stringIdx: number) => boardTop + rowOf(stringIdx) * stringH + stringH / 2
 
+  const columnIndex = new Map(columns.map((f, c) => [f, c]))
+
   const r = Math.min(cellW, stringH) / 2 - 3
 
-  const singleInlays = new Set([3, 5, 7, 9, 15, 17, 19, 21])
-  const doubleInlays = new Set([12, 24])
   const inlays = columns
     .map((f, c) => ({ f, c }))
-    .filter(({ f }) => singleInlays.has(f) || doubleInlays.has(f))
+    .filter(({ f }) => SINGLE_INLAYS.has(f) || DOUBLE_INLAYS.has(f))
 
   const labelX = isLeft ? nutX + 14 : nutX - 14
   const labelAnchor = isLeft ? 'start' : 'end'
@@ -96,7 +99,7 @@ export default function Fretboard({
       {/* Inlays */}
       {inlays.map(({ f, c }) => {
         const x = colLeft(c) + cellW / 2
-        if (doubleInlays.has(f)) {
+        if (DOUBLE_INLAYS.has(f)) {
           return (
             <g key={`inlay-${f}`}>
               <circle cx={x} cy={boardTop + boardH / 4} r={5} fill={COLORS.inlay} />
@@ -171,7 +174,9 @@ export default function Fretboard({
       {notes.map((n) => {
         const visible = n.inScale || !muteNonScale
         if (!visible) return null
-        const x = dotX(n.fret, columns.indexOf(n.fret))
+        const c = columnIndex.get(n.fret)
+        if (c === undefined) return null
+        const x = dotX(n.fret, c)
         const y = dotY(n.string)
 
         if (!n.inScale) {

@@ -1,11 +1,12 @@
 import {
   SCALES,
   TUNINGS,
-  SHARP,
-  FLAT,
+  SHARP_NAMES,
+  FLAT_NAMES,
   maxStartFret,
   type Settings,
-} from './theory'
+} from '../lib/theory'
+import './ControlPanel.css'
 
 interface Props {
   settings: Settings
@@ -15,8 +16,8 @@ interface Props {
 
 const FRET_OPTIONS = [12, 15, 24]
 
-export default function Controls({ settings, onChange, onReset }: Props) {
-  const roots = (settings.useFlats ? FLAT : SHARP)
+export default function ControlPanel({ settings, onChange, onReset }: Props) {
+  const roots = settings.useFlats ? FLAT_NAMES : SHARP_NAMES
 
   // Group scales by their category, preserving declaration order.
   const grouped = SCALES.reduce<Record<string, typeof SCALES>>((acc, s) => {
@@ -121,7 +122,7 @@ export default function Controls({ settings, onChange, onReset }: Props) {
 
         <div>
           <label className="control-label">
-            Position · fret {settings.startFret}
+            Position &middot; fret {settings.startFret}
           </label>
           <input
             type="range"
