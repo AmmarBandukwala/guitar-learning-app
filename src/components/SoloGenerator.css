@@ -1,0 +1,300 @@
+/* Solo Generator component styles */
+
+.solo-generator {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.solo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.solo-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.solo-toggle {
+  color: var(--muted);
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+.is-expanded .solo-toggle {
+  transform: rotate(180deg);
+}
+
+.solo-content {
+  padding: 0 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.solo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.solo-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 140px;
+}
+
+.solo-control-group .select {
+  padding: 0.4rem 0.5rem;
+  background: var(--bg-3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.solo-control-group .segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.solo-control-group .segmented button {
+  padding: 0.35rem 0.6rem;
+  background: var(--bg-3);
+  color: var(--text);
+  border: none;
+  border-left: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+.solo-control-group .segmented button:first-child {
+  border-left: none;
+}
+
+.solo-control-group .segmented button.is-active {
+  background: var(--accent);
+  color: #04283b;
+  font-weight: 700;
+}
+
+.solo-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+  align-items: center;
+}
+
+.btn-generate {
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: #04283b;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.btn-generate:hover {
+  opacity: 0.85;
+}
+
+.btn-play,
+.btn-stop {
+  padding: 0.5rem 0.8rem;
+  background: var(--bg-3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.btn-play:hover,
+.btn-stop:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.solo-empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 2rem 1rem;
+  font-style: italic;
+}
+
+/* Tab chart styles */
+.tab-section {
+  padding: 0.5rem 0;
+}
+
+.tab-container {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tab-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.tab-head-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tab-head-info {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.tab-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-board {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.75rem 0.5rem 1rem;
+  min-height: 8rem;
+  user-select: none;
+}
+
+.tab-str-row {
+  display: flex;
+  align-items: center;
+  height: 1.25rem;
+  position: relative;
+}
+
+.tab-str-label {
+  width: 2.5rem;
+  text-align: right;
+  margin-right: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+.tab-str-line {
+  position: relative;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.tab-bar {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 1px;
+  background: var(--border);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tab-bar.is-open {
+  background: transparent;
+}
+
+.tab-fret-num {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-3);
+  color: var(--text);
+  border-radius: 2px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  font-family: monospace;
+  padding: 0 0.15rem;
+  z-index: 2;
+  cursor: default;
+  border: 1px solid transparent;
+  transition: all 0.1s ease;
+}
+
+.tab-fret-num:hover {
+  border-color: var(--accent);
+  background: var(--bg-2);
+}
+
+.tab-fret-num.is-root {
+  background: var(--accent);
+  color: #04283b;
+  font-weight: 700;
+}
+
+.tab-time-line {
+  position: relative;
+  height: 1.2rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border);
+  margin-left: 1rem;
+  margin-right: 0.75rem;
+}
+
+.tab-time-mark {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--muted);
+  font-family: monospace;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .solo-controls {
+    flex-direction: column;
+  }
+
+  .solo-control-group {
+    width: 100%;
+  }
+
+  .solo-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+}

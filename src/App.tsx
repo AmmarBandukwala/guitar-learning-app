@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import ControlPanel from './components/ControlPanel'
 import Fretboard from './components/Fretboard'
 import ScaleLegend from './components/ScaleLegend'
+import SoloGenerator from './components/SoloGenerator'
 import { useNotePlayer } from './hooks/useNotePlayer'
 import { useSettings } from './hooks/useSettings'
 import { buildFretboard, getScale, getTuning, scaleNoteNames } from './lib/theory'
@@ -30,6 +31,13 @@ export default function App() {
       </header>
 
       <ControlPanel settings={settings} onChange={updateSettings} onReset={resetSettings} />
+
+      <SoloGenerator
+        root={settings.root}
+        scaleId={settings.scaleId}
+        tuningId={settings.tuningId}
+        useFlats={settings.useFlats}
+      />
 
       <main className="board-wrap">
         <Fretboard
