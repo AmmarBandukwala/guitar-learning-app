@@ -127,4 +127,20 @@ const standard = getTuning('standard')
   assert.ok(sawSpread, 'solos should span several strings, not sit on one')
 }
 
+{
+  // Adjacent fret numbers must stay parseable. Fret 12 followed closely by
+  // fret 10 used to render as "1210", which cannot be read unambiguously.
+  const tab = renderTab(
+    [
+      { semitone: 4, octave: 4, string: 2, fret: 12, duration: 0.25, delay: 0 },
+      { semitone: 4, octave: 4, string: 2, fret: 10, duration: 0.25, delay: 0.5 },
+    ],
+    standard,
+    1,
+  )
+  const row = tab.split('\n')[3] // G string row (index 2 from the bottom)
+  assert.ok(!row.includes('1210'), `fret numbers must be separated, got: ${row}`)
+  assert.ok(row.includes('12') && row.includes('10'), 'both frets still rendered')
+}
+
 console.log('  ok  tab rendering + solo generation')

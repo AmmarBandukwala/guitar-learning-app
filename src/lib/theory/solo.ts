@@ -278,9 +278,12 @@ export function renderTab(
       totalCols - 1,
       Math.max(0, Math.round(note.delay * colsPerBeat)),
     )
-    // Two notes very close together can round to the same column; slide to the
-    // next free one instead of overwriting the earlier fret.
-    while (col < totalCols - 1 && grid[note.string][col]) col++
+    // Keep at least one separator column between fret numbers on the same
+    // string. Without this, fret 12 followed by fret 10 renders as "1210",
+    // which a reader cannot parse.
+    const blocked = (c: number) =>
+      grid[note.string][c] !== '' || (c > 0 && grid[note.string][c - 1] !== '')
+    while (col < totalCols - 1 && blocked(col)) col++
     const text = String(note.fret)
     for (let i = 0; i < text.length; i++) {
       const c = col + i
