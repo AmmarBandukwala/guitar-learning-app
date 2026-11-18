@@ -148,6 +148,74 @@
 /* Tab chart styles */
 .tab-section {
   padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tab-view-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tab-view-toggle .segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tab-view-toggle .segmented button {
+  padding: 0.3rem 0.7rem;
+  background: var(--bg-3);
+  color: var(--text);
+  border: none;
+  border-left: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-family: inherit;
+}
+
+.tab-view-toggle .segmented button:first-child {
+  border-left: none;
+}
+
+.tab-view-toggle .segmented button.is-active {
+  background: var(--accent);
+  color: #04283b;
+  font-weight: 700;
+}
+
+.btn-copy {
+  padding: 0.3rem 0.7rem;
+  background: var(--bg-3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-copy:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Plain-text tab: monospaced, scrollable, never wrapping mid-string. */
+.tab-ascii {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tab-container {

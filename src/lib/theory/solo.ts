@@ -1,8 +1,10 @@
 // Solo generator: produces guitar solo phrases based on scale + genre rules.
 // Pure, no React.
 
+import { noteName } from './notes'
 import type { Scale } from './scales'
 import type { Tuning } from './tunings'
+import { openStringMidi } from './tunings'
 
 export interface SoloNote {
   semitone: number // 0-11 chromatic class
@@ -186,40 +188,147 @@ function selectScaleDegree(
 
 // ── Find optimal string/fret for a note ─────────────────────────────────────
 
-function findStringAndFret(
+export interface FretOptions {
+  /** Previously chosen string, used to keep the hand near its last position. */
+  lastString?: number
+  /** Previously chosen fret, the stronger cue for staying in a position. */
+  lastFret?: number
+  /** Highest fret the player is willing to reach. */
+  maxFret?: number
+}
+
+/**
+ * Pick the string/fret that plays `targetSemitone` at `targetOctave`.
+ *
+ * A fret is a physical distance up the neck, so it must come from absolute
+ * pitch: `fret = targetMidi - openStringMidi`. A string can only sound notes
+ * at or above its own open pitch, so candidates below it (or past `maxFret`)
+ * are rejected outright rather than wrapped into another octave.
+ *
+ * MIDI follows the `octave * 12 + semitone` convention used by the audio
+ * engine, so the tab and the playback always agree.
+ */
+export function findStringAndFret(
   targetSemitone: number,
   targetOctave: number,
   tuning: Tuning,
-  lastString?: number,
-  maxFret: number = 12,
+  options: FretOptions = {},
 ): { string: number; fret: number; octave: number } | null {
-  const targetMidi = targetOctave * 12 + targetSemitone
+  const { lastString, lastFret, maxFret = 12 } = options
+  const pc = ((targetSemitone % 12) + 12) % 12
+  const targetMidi = targetOctave * 12 + pc
+  const openMidi = openStringMidi(tuning)
 
-  let best: { string: number; fret: number; octave: number; score: number } | null = null
+  let best: { string: number; fret: number; score: number } | null = null
 
-  for (const [stringIdx, openSemitone] of tuning.strings.entries()) {
-    // Calculate fret needed
-    let fret = targetMidi - (4 * 12 + openSemitone)
-
-    // Try adjusting octave if fret is out of range
-    while (fret < 0) fret += 12
-    while (fret > maxFret) fret -= 12
-
+  for (const [stringIdx, open] of openMidi.entries()) {
+    const fret = targetMidi - open
     if (fret < 0 || fret > maxFret) continue
 
-    const actualMidi = 4 * 12 + openSemitone + fret
-    const actualOctave = Math.floor(actualMidi / 12)
-
-    // Score: prefer closer strings (less position shifting), lower frets
-    const stringDistance = lastString !== undefined ? Math.abs(stringIdx - lastString) : 0
-    const score = stringDistance * 2 + fret * 0.1
+    // Guitarists stay in a fret *position* and move across adjacent strings,
+    // rather than staying on one string. So weight hand movement up/down the
+    // neck most, then a small string hop, then a mild preference for lower
+    // positions. Without this the solver parks every note on a single string.
+    const fretMove = lastFret !== undefined ? Math.abs(fret - lastFret) : 0
+    const stringMove = lastString !== undefined ? Math.abs(stringIdx - lastString) : 0
+    const score = fretMove * 1.0 + stringMove * 0.35 + fret * 0.05
 
     if (!best || score < best.score) {
-      best = { string: stringIdx, fret, octave: actualOctave, score }
+      best = { string: stringIdx, fret, score }
     }
   }
 
-  return best ? { string: best.string, fret: best.fret, octave: best.octave } : null
+  // `targetMidi` is built from `pc` in 0..11, so its octave is exactly the
+  // octave we were asked for; returning it keeps tab and audio in lockstep.
+  return best ? { string: best.string, fret: best.fret, octave: targetOctave } : null
+}
+
+// ── ASCII tab rendering ─────────────────────────────────────────────────────
+
+/**
+ * Render notes as a monospaced ASCII guitar tab, highest string first:
+ *
+ *     e|-------5-------|
+ *     B|--5-------5----|
+ *     G|---------------|
+ *
+ * Columns are a fixed width per beat, so horizontal position still encodes
+ * rhythm, and `|` marks bar lines. Every string keeps the same column widths,
+ * which is what keeps the numbers vertically aligned with when they are played.
+ */
+export function renderTab(
+  notes: SoloNote[],
+  tuning: Tuning,
+  bars: number,
+  beatsPerBar: number = 4,
+  colsPerBeat: number = 4,
+): string {
+  const rows = tuning.strings.length
+  const totalCols = Math.max(1, Math.round(bars * beatsPerBar * colsPerBeat))
+
+  // grid[row][col] holds the fret text for that cell; '' means empty.
+  const grid: string[][] = Array.from({ length: rows }, () =>
+    new Array<string>(totalCols).fill(''),
+  )
+
+  const ordered = [...notes].sort((a, b) => a.delay - b.delay)
+  for (const note of ordered) {
+    if (note.string < 0 || note.string >= rows) continue
+    let col = Math.min(
+      totalCols - 1,
+      Math.max(0, Math.round(note.delay * colsPerBeat)),
+    )
+    // Two notes very close together can round to the same column; slide to the
+    // next free one instead of overwriting the earlier fret.
+    while (col < totalCols - 1 && grid[note.string][col]) col++
+    const text = String(note.fret)
+    for (let i = 0; i < text.length; i++) {
+      const c = col + i
+      if (c < totalCols) grid[note.string][c] = text[i]
+    }
+  }
+
+  const barCols = new Set<number>()
+  for (let b = 1; b < bars; b++) {
+    const col = Math.round(b * beatsPerBar * colsPerBeat)
+    if (col < totalCols) barCols.add(col)
+  }
+
+  // Column width is driven by the widest fret number in that column.
+  const widths: number[] = []
+  for (let c = 0; c < totalCols; c++) {
+    let w = 1
+    for (let r = 0; r < rows; r++) w = Math.max(w, grid[r][c].length)
+    widths.push(w)
+  }
+
+  // Highest string on top; only the very top string is spelled lowercase,
+  // matching the conventional `e| B| G| D| A| E|` layout.
+  const labels: string[] = []
+  for (let row = 0; row < rows; row++) {
+    const name = noteName(tuning.strings[row], false)
+    labels.push(row === rows - 1 ? name.toLowerCase() : name)
+  }
+  // Sharps make a label two characters wide, so pad them all to the same
+  // width or the string lines would not line up between rows.
+  const labelWidth = Math.max(...labels.map((l) => l.length))
+
+  const lines: string[] = []
+  for (let row = rows - 1; row >= 0; row--) {
+    let line = `${labels[row].padStart(labelWidth)}|`
+    for (let c = 0; c < totalCols; c++) {
+      const cell = grid[row][c]
+      const width = widths[c]
+      if (cell) {
+        line += cell.padEnd(width, '-')
+      } else {
+        line += (barCols.has(c) ? '|' : '-').repeat(width)
+      }
+    }
+    lines.push(`${line}|`)
+  }
+
+  return lines.join('\n')
 }
 
 // ── Phrase structure generation ─────────────────────────────────────────────
@@ -283,6 +392,7 @@ export function generateSolo(
     let phraseBeat = 0
     let lastDegree: number | undefined
     let lastString: number | undefined
+    let lastFret: number | undefined
 
     // Determine the octave range for this phrase
     // Alternate between mid and high register for variety
@@ -290,12 +400,16 @@ export function generateSolo(
 
     while (phraseBeat < phraseBeats && notes.filter((n) => n.delay >= currentBeat).length < targetNotes) {
       // Select duration
-      const duration = weightedRandom(
+      const rawDuration = weightedRandom(
         genre.durations.map((d) => ({ value: d.beats, weight: d.weight })),
       )
 
-      // Don't exceed phrase boundary
-      if (phraseBeat + duration > phraseBeats + 0.5) break
+      // Stop rather than starting a note that cannot fit in the phrase, and
+      // clamp the tail so a note never crosses the bar line into the next
+      // phrase (that would overlap the notes the next phrase starts with).
+      const remaining = phraseBeats - phraseBeat
+      if (remaining <= 0 || rawDuration > remaining + 0.5) break
+      const duration = Math.min(rawDuration, remaining)
 
       // Check for repeated note (hammer-on style)
       let semitone: number
@@ -324,8 +438,18 @@ export function generateSolo(
       // Resolve to absolute semitone for string/fret calculation
       const absoluteSemitone = ((root + semitone) % 12 + 12) % 12
 
-      // Find string and fret
-      const position = findStringAndFret(absoluteSemitone, octave, tuning, lastString)
+      // Find string and fret. A register can sit above the neck (octave 5+
+      // lands past fret 12 on the treble strings), so fall back to the
+      // neighbouring octaves before giving up on the note entirely.
+      const opts = { lastString, lastFret, maxFret: 12 }
+      const position =
+        findStringAndFret(absoluteSemitone, octave, tuning, opts) ??
+        findStringAndFret(absoluteSemitone, octave - 1, tuning, opts) ??
+        findStringAndFret(absoluteSemitone, octave + 1, tuning, opts)
+
+      // Always consume the beat, otherwise an unplaceable note would spin this
+      // loop forever without advancing `phraseBeat`.
+      phraseBeat += duration
       if (!position) continue
 
       notes.push({
@@ -334,11 +458,11 @@ export function generateSolo(
         string: position.string,
         fret: position.fret,
         duration,
-        delay: currentBeat + phraseBeat,
+        delay: currentBeat + phraseBeat - duration,
       })
 
       lastString = position.string
-      phraseBeat += duration
+      lastFret = position.fret
     }
 
     currentBeat += phraseBeats

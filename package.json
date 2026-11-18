@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test": "bash scripts/run-tests.sh",
+    "demo:tab": "rolldown scripts/demo-tab.ts -o node_modules/.tmp/demo.mjs -f esm && node node_modules/.tmp/demo.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { getScale, getTuning, noteName } from '../lib/theory'
+import { renderTab } from '../lib/theory/solo'
 import { useSoloGenerator } from '../hooks/useSoloGenerator'
 import './SoloGenerator.css'
 
@@ -23,6 +24,7 @@ export default function SoloGenerator({ root, scaleId, tuningId, useFlats }: Pro
   const scale = useMemo(() => getScale(scaleId), [scaleId])
   const tuning = useMemo(() => getTuning(tuningId), [tuningId])
   const [isExpanded, setIsExpanded] = useState(false)
+  const [view, setView] = useState<'tab' | 'grid'>('tab')
 
   const {
     state,
@@ -67,6 +69,12 @@ export default function SoloGenerator({ root, scaleId, tuningId, useFlats }: Pro
       noteName: (s: number) => noteName(s, useFlats),
     }
   }, [generatedSolo, root, tuning.strings, useFlats])
+
+  // Plain-text guitar tab, e.g. `e|----5----|`, matching how tabs are written out.
+  const asciiTab = useMemo(() => {
+    if (!generatedSolo) return null
+    return renderTab(generatedSolo.notes, tuning, generatedSolo.bars, BEATS_PER_BAR)
+  }, [generatedSolo, tuning])
 
   return (
     <div className={`solo-generator ${isExpanded ? 'is-expanded' : ''}`}>
@@ -148,7 +156,38 @@ export default function SoloGenerator({ root, scaleId, tuningId, useFlats }: Pro
             {!generatedSolo ? (
               <p className="solo-empty">Click "Generate Solo" to create a guitar solo.</p>
             ) : (
-              <TabChart data={tabData!} />
+              <>
+                <div className="tab-view-toggle">
+                  <div className="segmented">
+                    <button
+                      className={view === 'tab' ? 'is-active' : ''}
+                      onClick={() => setView('tab')}
+                    >
+                      Tab
+                    </button>
+                    <button
+                      className={view === 'grid' ? 'is-active' : ''}
+                      onClick={() => setView('grid')}
+                    >
+                      Grid
+                    </button>
+                  </div>
+                  <button
+                    className="btn-copy"
+                    onClick={() => navigator.clipboard?.writeText(asciiTab ?? '')}
+                  >
+                    Copy tab
+                  </button>
+                </div>
+
+                {view === 'tab' ? (
+                  <div className="tab-container">
+                    <pre className="tab-ascii">{asciiTab}</pre>
+                  </div>
+                ) : (
+                  <TabChart data={tabData!} />
+                )}
+              </>
             )}
           </div>
         </div>
